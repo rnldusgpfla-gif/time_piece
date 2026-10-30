@@ -395,7 +395,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
     <button type="button" class="gbtn" id="loginbtn"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Google로 계속하기</button>
     <p class="loginmsg" id="loginmsg" role="status"></p>
     <button type="button" class="guestbtn" id="guestbtn">로그인 없이 이 기기에서만 쓰기</button>
-    <p style="font-size:12px">기록은 내 계정에만 저장되고 다른 사람은 볼 수 없어요.</p>
+    <p style="font-size:12px">기록은 내 계정에만 저장되고 다른 사람은 볼 수 없어요.<br><a href="privacy.html" style="color:inherit">개인정보처리방침</a></p>
   </div>
 </div>
 
@@ -724,14 +724,37 @@ function drawAcct(){
   const el = $('#acct'); if (!el) return;
   if (userId) {
     el.innerHTML = '<p class="setnote">로그인됨 · <b>' + esc(acctEmail || '구글 계정') + '</b><br>기록과 설정이 이 계정에 저장되고, 같은 계정으로 로그인한 기기에서 함께 보여요.</p>' +
-      '<div class="setacts"><button class="btn danger" id="logoutbtn" type="button">로그아웃</button></div>' +
-      '<p class="setnote">로그아웃하면 이 기기에 저장된 사본은 지워져요. 기록은 계정에 남아 있어요.</p>';
+      '<div class="setacts"><button class="btn" id="logoutbtn" type="button">로그아웃</button><button class="btn danger" id="delcloud" type="button">클라우드 기록 모두 삭제</button></div>' +
+      '<p class="setnote">로그아웃하면 이 기기에 저장된 사본은 지워져요. 기록은 계정에 남아 있어요.</p>' +
+      '<p class="setnote" id="acctmsg" role="status"></p>' +
+      '<p class="setnote"><a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a></p>';
   } else {
     el.innerHTML = '<p class="setnote">지금은 이 기기에만 저장돼요. 로그인하면 지금까지의 기록이 계정으로 올라가고 다른 기기에서도 볼 수 있어요.</p>' +
-      '<div class="setacts"><button class="btn primary" id="acctlogin" type="button">Google로 로그인</button></div>';
+      '<div class="setacts"><button class="btn primary" id="acctlogin" type="button">Google로 로그인</button></div>' +
+      '<p class="setnote"><a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a></p>';
   }
 }
+let delArm = false, delTimer = null;
+async function wipeCloud(){
+  const b = $('#delcloud'), m = $('#acctmsg');
+  if (!delArm) {
+    delArm = true; b.textContent = '정말 모두 지울까요? 한 번 더';
+    clearTimeout(delTimer); delTimer = setTimeout(() => { delArm = false; if ($('#delcloud')) $('#delcloud').textContent = '클라우드 기록 모두 삭제'; }, 4000);
+    return;
+  }
+  delArm = false; clearTimeout(delTimer); b.disabled = true; b.textContent = '지우는 중…';
+  try {
+    const uid = userId;
+    const a = await sbc.from('days').delete().eq('user_id', uid); if (a.error) throw a.error;
+    const c = await sbc.from('settings').delete().eq('user_id', uid); if (c.error) throw c.error;
+    db = null;
+    try { await sbc.auth.signOut(); } catch(e){}
+    wipeLocal();
+    location.replace(APP_BASE);
+  } catch(e){ b.disabled = false; b.textContent = '클라우드 기록 모두 삭제'; m.textContent = '삭제하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.'; }
+}
 document.addEventListener('click', ev => {
+  if (ev.target.closest('#delcloud')) { wipeCloud(); return; }
   if (ev.target.closest('#logoutbtn')) doSignOut();
   else if (ev.target.closest('#acctlogin')) { lsSet('timelog:guest', ''); googleLogin(); }
   else if (ev.target.closest('#loginbtn')) googleLogin();
