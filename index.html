@@ -29,10 +29,10 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.wrap{max-width:640px;margin:0 auto}
+.wrap{max-width:640px;margin:0 auto;padding-top:var(--toph,150px)}
 
 /* header */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-top:12px;display:flex;flex-direction:column;gap:6px;padding-bottom:8px}
+.top{position:fixed;top:env(safe-area-inset-top,0px);left:50%;transform:translateX(-50%);width:min(640px,calc(100% - 2 * max(16px, env(safe-area-inset-left, 0px))));z-index:20;background:var(--bg);padding-top:12px;display:flex;flex-direction:column;gap:6px;padding-bottom:8px}
 .titlebar{display:flex;align-items:center;gap:6px}
 .month{position:relative;flex:1;min-width:0;display:flex;align-items:center;gap:6px;cursor:pointer;height:40px}
 .month b{font-size:22px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
@@ -57,6 +57,7 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid va
 .sd .dot.g{background:var(--muted);opacity:.55}
 .subline{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;padding:2px 2px 0;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .subline span{min-width:0}
+.subline #dsubt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
 .resetbtn{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:500;padding:6px 9px;border-radius:8px;opacity:.75;flex:none;white-space:nowrap}
 .resetbtn.arm{color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,transparent);opacity:1;font-weight:700}
 
@@ -123,7 +124,7 @@ body.dragging{-webkit-user-select:none;user-select:none}
 
 /* edit sheet */
 .scrim{position:fixed;inset:0;background:rgb(10 12 20/.36);z-index:40}
-.sheet{position:fixed;left:0;right:0;top:0;z-index:50;background:var(--surface);border-radius:0 0 24px 24px;max-height:calc(100dvh - 24px);overflow-y:auto;
+.sheet{position:fixed;left:0;right:0;top:0;z-index:50;background:var(--surface);border-radius:0 0 24px 24px;max-height:calc(100dvh - 24px);overflow-y:auto;overflow-x:hidden;
   padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-left,0px)) 18px;box-shadow:0 10px 40px rgb(10 12 20/.22)}
 .sheet-in{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .sheet h3{margin:0;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -135,12 +136,16 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .field{display:flex;flex-direction:column;gap:5px;min-width:0}
 .field label{font-size:12px;color:var(--muted);font-weight:500}
 .field input{height:44px;border-radius:12px;border:0;background:var(--tint);color:var(--fg);padding:0 14px;font:inherit;font-size:15px;min-width:0;width:100%}
-.times{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.times{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.sheet .field input[type=time]{display:block;width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;text-align:left}
 .times input{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .err{color:var(--danger);font-size:12.5px;margin:0;min-height:0}
 .acts{display:flex;gap:8px}
 .acts .grow{flex:1}
 .acts .btn{height:44px}
+.sheet .acts .grow{display:none}
+.sheet .acts .btn{flex:1;min-width:0}
+.sheet .acts .btn.primary{flex:1.6}
 
 /* settings */
 .setroot{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -447,7 +452,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
     <div class="sheet-in">
       <h3><span id="sheettitle">실제 기록</span><small id="sheetdur"></small></h3>
       <div class="chips" id="chips" role="group" aria-label="분류"></div>
-      <div class="field"><label for="memo">메모</label><input id="memo" type="text" maxlength="60" placeholder="무엇을 했나요? 비우면 분류 이름으로 표시돼요" autocomplete="off"></div>
+      <div class="field"><label for="memo">메모</label><input id="memo" type="text" maxlength="60" placeholder="무엇을 했나요?" autocomplete="off"></div>
       <div class="times">
         <div class="field"><label for="tstart">시작</label><input id="tstart" type="time" step="300"></div>
         <div class="field"><label for="tend">끝</label><input id="tend" type="time" step="300"></div>
@@ -1003,6 +1008,7 @@ function openSheet(o){
   edit = {layer: o.layer, id: o.id || null, s: o.s, e: o.e, c: c0, t: o.t || ''};
   $('#sheettitle').textContent = LAYER_NAME[edit.layer] + (edit.id ? ' 수정' : ' 기록');
   $('#memo').value = edit.t;
+  $('#memo').placeholder = edit.layer === 'goal' ? '무엇을 할까요?' : '무엇을 했나요?';
   $('#tstart').value = toTime(edit.s);
   $('#tend').value = toTime(edit.e);
   $('#del').hidden = !edit.id;
@@ -1971,6 +1977,11 @@ setInterval(() => {
   if (t !== TODAY) { const wasToday = date === TODAY; TODAY = t; if (wasToday) setDate(t); else renderAll(); return; }
   if (!drag) { if (date === TODAY && tab !== 'calendar') renderAll(); else updateFab(); }
 }, 60000);
+const topEl = $('.top');
+function syncTop(){ document.documentElement.style.setProperty('--toph', topEl.offsetHeight + 'px'); }
+try { new ResizeObserver(syncTop).observe(topEl); } catch(e){}
+window.addEventListener('resize', syncTop);
+syncTop();
 applyHash();
 scrollToRelevant();
 initDb();
