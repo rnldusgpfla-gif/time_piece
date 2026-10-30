@@ -124,9 +124,10 @@ body.dragging{-webkit-user-select:none;user-select:none}
 
 /* edit sheet */
 .scrim{position:fixed;inset:0;background:rgb(10 12 20/.36);z-index:40}
-.sheet{position:fixed;left:0;right:0;top:0;z-index:50;background:var(--surface);border-radius:0 0 24px 24px;max-height:calc(100dvh - 24px);overflow-y:auto;overflow-x:hidden;
-  padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-left,0px)) 18px;box-shadow:0 10px 40px rgb(10 12 20/.22)}
-.sheet-in{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.sheet{position:fixed;left:0;right:0;bottom:var(--kb,0px);top:calc(env(safe-area-inset-top,0px) + 56px);z-index:50;background:var(--surface);border-radius:24px 24px 0 0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;
+  padding:20px max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgb(10 12 20/.2)}
+.sheet-in{max-width:640px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:14px;flex:1 0 auto}
+.sheet-in .acts{margin-top:auto;padding-top:8px}
 .sheet h3{margin:0;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .sheet h3 small{font-weight:500;color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
@@ -137,7 +138,9 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .field label{font-size:12px;color:var(--muted);font-weight:500}
 .field input{height:44px;border-radius:12px;border:0;background:var(--tint);color:var(--fg);padding:0 14px;font:inherit;font-size:15px;min-width:0;width:100%}
 .times{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
-.sheet .field input[type=time]{display:block;width:100%;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;text-align:left}
+.field input[type=time],.field input[type=date]{width:100%;min-width:0;max-width:100%}
+.field input::-webkit-date-and-time-value{text-align:left;min-height:1.3em}
+@media (pointer:coarse){input:not([type=checkbox]):not([type=color]):not([type=file]),textarea,select{font-size:16px}}
 .times input{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .err{color:var(--danger);font-size:12.5px;margin:0;min-height:0}
 .acts{display:flex;gap:8px}
@@ -263,7 +266,7 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .check{display:flex;align-items:center;gap:8px;font-size:13.5px}
 .check input{width:18px;height:18px;accent-color:var(--accent)}
 #rsheetroot .scrim{z-index:80}
-#rsheetroot .sheet{z-index:90;max-height:calc(100dvh - 24px);overflow-y:auto}
+#rsheetroot .sheet{z-index:90}
 
 /* v8 additions */
 .loginroot{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px max(24px,env(safe-area-inset-left,0px));overflow-y:auto}
@@ -319,7 +322,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
 .statbody .tot b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .statbody .tot small{font-size:12px;color:var(--muted)}
 .sumnote{margin:10px 2px 0;font-size:12px;color:var(--muted)}
-@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(-24px);opacity:.6}}}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(48px);opacity:.6}}}
 </style>
 
 <div class="wrap">
@@ -1016,14 +1019,6 @@ function openSheet(o){
   drawChips(); updateDur();
   $('#sheetroot').hidden = false;
   renderAll();
-  setTimeout(() => {
-    const g = $('.ghost') || $('.blk[data-id="' + edit.id + '"]');
-    const sh = $('#sheetroot .sheet');
-    if (g && sh) {
-      const r = g.getBoundingClientRect(), want = sh.getBoundingClientRect().bottom + 20;
-      if (r.top < want || r.top > window.innerHeight - 200) window.scrollBy({top: r.top - want, behavior: 'smooth'});
-    }
-  }, 30);
 }
 function closeSheet(){
   edit = null;
@@ -1977,6 +1972,9 @@ setInterval(() => {
   if (t !== TODAY) { const wasToday = date === TODAY; TODAY = t; if (wasToday) setDate(t); else renderAll(); return; }
   if (!drag) { if (date === TODAY && tab !== 'calendar') renderAll(); else updateFab(); }
 }, 60000);
+const vv = window.visualViewport;
+function syncKb(){ if (!vv) return; document.documentElement.style.setProperty('--kb', Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) + 'px'); }
+if (vv) { vv.addEventListener('resize', syncKb); vv.addEventListener('scroll', syncKb); }
 const topEl = $('.top');
 function syncTop(){ document.documentElement.style.setProperty('--toph', topEl.offsetHeight + 'px'); }
 try { new ResizeObserver(syncTop).observe(topEl); } catch(e){}
