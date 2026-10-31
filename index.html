@@ -6,7 +6,7 @@
 <style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 0}body{margin:0}</style></head><body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <style>
-/* Layout: flat pastel calendar mood. Month title + week strip on top, one vertical 24h timeline, bottom tab bar (목표 / 실제 / 비교). */
+/* Layout: flat pastel calendar mood. Month title + week strip on top, one vertical 24h timeline, bottom tab bar (계획 / 실제 / 비교). */
 :root{
   --bg:#FFFFFF; --surface:#FFFFFF; --tint:#F4F6FA; --fg:#1B1F2A; --muted:#8A91A3; --line:#ECEEF3;
   --accent:#2F8BFF; --accent-ink:#FFFFFF; --danger:#F0506E; --sun:#F0506E;
@@ -342,13 +342,13 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
   <main>
     <section id="notice" hidden></section>
     <section id="summary" hidden></section>
-    <div class="colhead" id="colhead" hidden><span>00</span><span>목표</span><span>실제</span></div>
+    <div class="colhead" id="colhead" hidden><span>00</span><span>계획</span><span>실제</span></div>
     <section id="cal" class="cal" hidden></section>
     <div class="tlwrap"><div class="tl" id="tl"></div></div>
   </main>
 </div>
 <nav class="tabs" role="tablist" aria-label="보기">
-  <button role="tab" id="tab-goal" data-tab="goal" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><span>목표</span></button>
+  <button role="tab" id="tab-goal" data-tab="goal" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><span>계획</span></button>
   <button role="tab" id="tab-actual" data-tab="actual" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg><span>실제</span></button>
   <button role="tab" id="tab-compare" data-tab="compare" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="16" rx="2"/><rect x="13.5" y="8" width="6.5" height="12" rx="2"/></svg><span>비교</span></button>
   <button role="tab" id="tab-calendar" data-tab="calendar" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>달력</span></button>
@@ -364,7 +364,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
       <p class="setnote">실제 탭의 빈 시간 표시와 달력의 기록률이 이 시간대를 기준으로 계산돼요. 끝을 00:00으로 두면 자정까지예요.</p>
     </div>
     <div class="setsec"><h3>글꼴</h3><div class="fonts" id="fontlist"></div></div>
-    <div class="setsec"><h3>하루 계획 · 고정 루틴</h3><p class="setnote">정한 요일과 기간마다 목표에 자동으로 채워져요. 그날 이미 칠해 둔 목표와 겹치는 시간은 건너뛰어요.</p><div id="routlist"></div><div class="setacts"><button class="btn primary" id="routadd" type="button">+ 루틴 추가</button></div></div>
+    <div class="setsec"><h3>하루 계획 · 고정 루틴</h3><p class="setnote">정한 요일과 기간마다 계획에 자동으로 채워져요. 그날 이미 칠해 둔 계획과 겹치는 시간은 건너뛰어요.</p><div id="routlist"></div><div class="setacts"><button class="btn primary" id="routadd" type="button">+ 루틴 추가</button></div></div>
     <h3 class="sech">분류</h3>
     <p class="setnote">이름과 색, 순서를 마음대로 바꿀 수 있어요. 바꾼 내용은 바로 저장돼요. 색 동그라미를 누르면 색을 고를 수 있어요.</p>
     <div id="catlist" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -400,7 +400,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
   <div class="loginbox">
     <img src="apple-touch-icon.png" alt="">
     <h1 id="logintitle">시간조각</h1>
-    <p>하루를 색으로 칠하고,<br>목표와 실제를 비교해 보세요.<br>로그인하면 어느 기기에서든 같은 기록을 볼 수 있어요.</p>
+    <p>하루를 색으로 칠하고,<br>계획과 실제를 비교해 보세요.<br>로그인하면 어느 기기에서든 같은 기록을 볼 수 있어요.</p>
     <button type="button" class="gbtn" id="loginbtn"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Google로 계속하기</button>
     <p class="loginmsg" id="loginmsg" role="status"></p>
     <button type="button" class="guestbtn" id="guestbtn">로그인 없이 이 기기에서만 쓰기</button>
@@ -442,7 +442,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
 <div id="shotroot" class="shotroot" hidden role="dialog" aria-modal="true" aria-label="한눈에 보기">
   <div class="shotbar">
     <div class="seg" id="shotmode" role="group" aria-label="범위"><button type="button" data-shot="day">하루</button><button type="button" data-shot="week">일주일</button></div>
-    <div class="seg" id="shotlayer" role="group" aria-label="종류"><button type="button" data-layer="actual">실제</button><button type="button" data-layer="goal">목표</button></div>
+    <div class="seg" id="shotlayer" role="group" aria-label="종류"><button type="button" data-layer="actual">실제</button><button type="button" data-layer="goal">계획</button></div>
     <span style="flex:1"></span>
     <button class="btn" id="shothide" type="button">캡처용 정리</button>
     <button class="btn primary" id="shotclose" type="button">닫기</button>
@@ -505,7 +505,7 @@ try { const lc = normCats(JSON.parse(lsGet('timelog:cats') || 'null')); if (lc) 
 rebuildCat();
 const catVar = id => CAT[id] ? CAT[id].col : 'var(--muted)';
 const catName = id => CAT[id] ? CAT[id].n : '삭제된 분류';
-const LAYER_NAME = {goal:'목표', actual:'실제'};
+const LAYER_NAME = {goal:'계획', actual:'실제'};
 const DOW = ['일','월','화','수','목','금','토'];
 
 const pad = n => String(n).padStart(2, '0');
@@ -864,9 +864,9 @@ function renderHeader(){
   $('#dpick').value = date;
   const o = getDay(date);
   let sub = '';
-  if (tab === 'goal') sub = o.goal.length ? '목표 ' + dur(sumMin(o.goal)) : '목표를 칠해보세요';
+  if (tab === 'goal') sub = o.goal.length ? '계획 ' + dur(sumMin(o.goal)) : '계획을 칠해보세요';
   else if (tab === 'actual') sub = o.actual.length ? '기록 ' + dur(sumMin(o.actual)) : '아직 기록이 없어요';
-  else sub = '목표 ' + dur(sumMin(o.goal)) + ' · 실제 ' + dur(sumMin(o.actual));
+  else sub = '계획 ' + dur(sumMin(o.goal)) + ' · 실제 ' + dur(sumMin(o.actual));
   $('#dsubt').textContent = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + DOW[d.getDay()] + '요일 · ' + sub;
   renderStrip();
   updateResetBtn();
@@ -903,10 +903,10 @@ function renderNotice(){
   const bothEmpty = tab === 'compare' && !hasData(o);
   if (!layerEmpty && !bothEmpty) { el.hidden = true; el.innerHTML = ''; return; }
   let msg;
-  if (tab === 'compare') msg = '<p><strong>목표와 실제를 나란히 봅니다.</strong> 먼저 목표 탭과 실제 탭에서 시간을 칠해 주세요.</p>';
+  if (tab === 'compare') msg = '<p><strong>계획과 실제를 나란히 봅니다.</strong> 먼저 계획 탭과 실제 탭에서 시간을 칠해 주세요.</p>';
   else msg = '<p><strong>시간대를 칠해서 ' + LAYER_NAME[tab] + '을 기록해요.</strong> 원하는 시간대를 0.3초쯤 꾹 누른 채 위아래로 움직이면 10분 단위로 칠해져요. 그냥 밀면 스크롤돼요. 칠한 구간을 누르면 수정할 수 있어요.</p>';
   let btns = '';
-  if (tab === 'goal') btns += '<button class="btn primary" data-act="copyprev" type="button">전날 목표 복사</button>';
+  if (tab === 'goal') btns += '<button class="btn primary" data-act="copyprev" type="button">전날 계획 복사</button>';
   if (!hasData(o)) btns += '<button class="btn" data-act="sample" type="button">예시로 체험하기</button>';
   el.innerHTML = msg + (btns ? '<div class="row">' + btns + '</div>' : '');
   el.className = 'notice';
@@ -920,15 +920,15 @@ function renderSummary(){
   const ids = CATS.map(c => c.id).concat(extra).filter(id => g[id] || a[id]);
   if (!ids.length) { el.hidden = true; el.innerHTML = ''; return; }
   const max = Math.max(...ids.map(id => Math.max(g[id] || 0, a[id] || 0)));
-  let h = '<h2>분류별 목표와 실제<span>' + (ac.G ? '달성률 ' + Math.round(ac.H / ac.G * 100) + '%' : dur(sumMin(o.goal)) + ' → ' + dur(sumMin(o.actual))) + '</span></h2>';
+  let h = '<h2>분류별 계획과 실제<span>' + (ac.G ? '달성률 ' + Math.round(ac.H / ac.G * 100) + '%' : dur(sumMin(o.goal)) + ' → ' + dur(sumMin(o.actual))) + '</span></h2>';
   for (const id of ids) {
     const gv = g[id] || 0, av = a[id] || 0, diff = av - gv;
-    const dtxt = diff === 0 ? '목표 달성' : (diff > 0 ? '+' : '−') + dur(Math.abs(diff));
+    const dtxt = diff === 0 ? '계획 달성' : (diff > 0 ? '+' : '−') + dur(Math.abs(diff));
     h += '<div class="srow" style="--cat:' + catVar(id) + '"><i></i><span class="n">' + esc(catName(id)) + '</span>' +
       '<span class="v">' + (gv ? dur(gv) : '0분') + ' → ' + (av ? dur(av) : '0분') + ' · ' + dtxt + (ac.byCat[id] && ac.byCat[id].g ? ' · 달성 ' + Math.round(ac.byCat[id].h / ac.byCat[id].g * 100) + '%' : '') + '</span>' +
       '<div class="bars"><u class="g" style="width:' + (gv / max * 100) + '%;' + (gv ? '' : 'display:none') + '"></u><u class="a" style="width:' + (av / max * 100) + '%;' + (av ? '' : 'display:none') + '"></u></div></div>';
   }
-  if (ac.G) h += '<p class="sumnote">달성률은 목표 시간대에 같은 분류로 실제 기록을 남긴 비율이에요.</p>';
+  if (ac.G) h += '<p class="sumnote">달성률은 계획 시간대에 같은 분류로 실제 기록을 남긴 비율이에요.</p>';
   el.innerHTML = h;
   el.className = 'summary';
   el.hidden = false;
@@ -971,7 +971,7 @@ function renderCal(){
     '<div class="tiles t4"><div class="tile"><small>총 기록</small><b>' + dur(tot) + '</b></div>' +
     '<div class="tile"><small>하루 평균</small><b>' + (rec ? dur(Math.round(tot / rec)) : '\u2013') + '</b></div>' +
     '<div class="tile"><small>연속 기록</small><b>' + st + '일</b></div>' +
-    '<div class="tile"><small>목표 달성률</small><b>' + (aw.n ? Math.round(aw.sum / aw.n * 100) + '%' : '\u2013') + '</b></div></div></div>';
+    '<div class="tile"><small>계획 달성률</small><b>' + (aw.n ? Math.round(aw.sum / aw.n * 100) + '%' : '\u2013') + '</b></div></div></div>';
   h += '<div class="calhead">' + ['월', '화', '수', '목', '금', '토', '일'].map(w => '<span class="' + (w === '일' ? 'sun' : '') + '">' + w + '</span>').join('') + '</div><div class="calgrid">';
   cells.forEach(d => {
     if (!d) { h += '<div class="cd pad"></div>'; return; }
@@ -1258,7 +1258,7 @@ $('#notice').addEventListener('click', ev => {
     let src = null, k = date;
     for (let i = 0; i < 14 && !src; i++) { k = addDays(k, -1); const p = getDay(k); if (p.goal.length) src = p.goal; }
     if (src) { o.goal = src.map(x => ({...x, id: uid()})); commit(); }
-    else { b.textContent = '복사할 목표가 최근 2주 안에 없어요'; b.disabled = true; }
+    else { b.textContent = '복사할 계획이 최근 2주 안에 없어요'; b.disabled = true; }
   }
 });
 
@@ -1459,7 +1459,7 @@ function renderShot(){
   const wk = shotMode === 'week', wd = wk ? weekDates() : [];
   const cols = wk
     ? wd.map(d => { const x = parseYmd(d); return {h: DOW[x.getDay()], s: String(x.getDate()), l: shotLayer, d, today: d === TODAY}; })
-    : [{h: '목표', l: 'goal', d: shotDate}, {h: '실제', l: 'actual', d: shotDate}];
+    : [{h: '계획', l: 'goal', d: shotDate}, {h: '실제', l: 'actual', d: shotDate}];
   cols.forEach(c => ensureRoutines(c.d));
   const lists = cols.map(c => getDay(c.d)[c.l]);
   let mn = 1440, mx = 0;
@@ -1479,7 +1479,7 @@ function renderShot(){
     const x = parseYmd(shotDate);
     title = (x.getMonth() + 1) + '월 ' + x.getDate() + '일 (' + DOW[x.getDay()] + ')';
     const ac = achieve({goal: lists[0], actual: lists[1]});
-    sub = '목표 ' + dur(sumMin(lists[0])) + ' · 실제 ' + dur(sumMin(lists[1])) + (ac.G ? ' · 달성 ' + Math.round(ac.H / ac.G * 100) + '%' : '');
+    sub = '계획 ' + dur(sumMin(lists[0])) + ' · 실제 ' + dur(sumMin(lists[1])) + (ac.G ? ' · 달성 ' + Math.round(ac.H / ac.G * 100) + '%' : '');
   }
   let h = '<div class="shead"><button class="iconbtn" data-nav="-1" aria-label="이전" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button><div class="stitle"><b>' + title + '</b><small>' + sub + '</small></div><button class="iconbtn" data-nav="1" aria-label="다음" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg></button></div>';
   h += '<div class="scolheads" style="grid-template-columns:' + grid + '"><span></span>' + cols.map(c => '<span class="' + (c.today ? 'today' : '') + '">' + c.h + (c.s ? '<em>' + c.s + '</em>' : '') + '</span>').join('') + '</div>';
@@ -1678,11 +1678,11 @@ let resetKey = null, resetTimer2 = null;
 function updateResetBtn(){
   const b = $('#resetbtn'); if (!b) return;
   if (resetKey && resetKey !== tab + '|' + date) resetKey = null;
-  b.textContent = resetKey ? (tab === 'compare' ? '목표·실제 모두 지울까요?' : '정말 지울까요?') : '초기화';
+  b.textContent = resetKey ? (tab === 'compare' ? '계획·실제 모두 지울까요?' : '정말 지울까요?') : '초기화';
   b.classList.toggle('arm', !!resetKey);
   $('#copybtn').hidden = tab === 'compare';
   if (menuKey && menuKey !== tab + '|' + date) closeMenu();
-  b.setAttribute('aria-label', tab === 'goal' ? '이 날 목표 초기화' : tab === 'actual' ? '이 날 실제 기록 초기화' : '이 날 목표와 실제 초기화');
+  b.setAttribute('aria-label', tab === 'goal' ? '이 날 계획 초기화' : tab === 'actual' ? '이 날 실제 기록 초기화' : '이 날 계획과 실제 초기화');
 }
 $('#resetbtn').addEventListener('click', () => {
   if (!resetKey) {
