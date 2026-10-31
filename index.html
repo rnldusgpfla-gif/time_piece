@@ -288,6 +288,7 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .future{position:absolute;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--muted) 15%,transparent);border-top:1px solid color-mix(in srgb,var(--muted) 25%,transparent);z-index:3;pointer-events:none}
 .gap{position:absolute;left:3px;right:3px;border-radius:9px;border:1.5px dashed color-mix(in srgb,var(--muted) 45%,transparent);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:12px;font-weight:600;overflow:hidden}
 .gap span{pointer-events:none}
+.blk.moving{opacity:.35}
 .blk.run{box-shadow:inset 0 0 0 2px var(--accent)}
 .fab{display:flex;gap:8px;align-items:center;position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(82px + env(safe-area-inset-bottom,0px));z-index:26}
 .fabbtn{display:flex;align-items:center;gap:8px;height:46px;padding:0 18px 0 14px;border:0;border-radius:23px;background:var(--accent);color:var(--accent-ink);font-size:14px;font-weight:700;box-shadow:0 6px 20px rgb(10 12 20/.25);max-width:calc(100vw - 32px)}
@@ -1079,9 +1080,15 @@ const clampMin = m => Math.max(0, Math.min(1440 - SNAP, m));
 const cellAt = (y, track) => clampMin(Math.floor((y - track.getBoundingClientRect().top) / PPM / SNAP) * SNAP);
 const range = d => [Math.min(d.a, d.cur), Math.max(d.a, d.cur) + SNAP];
 
+function moveRange(d){
+  const len = d.move.e - d.move.s;
+  const dy = (d.y + window.scrollY) - d.y0p;
+  const ns = Math.max(0, Math.min(1440 - len, d.move.s + Math.round(dy / PPM / SNAP) * SNAP));
+  return [ns, ns + len];
+}
 function showGhost(){
   let g = drag.track.querySelector('.ghost');
-  const [s, e] = range(drag);
+  const [s, e] = drag.move ? drag.mv : range(drag);
   if (!g) { drag.track.insertAdjacentHTML('beforeend', ghostHtml(s, e)); return; }
   g.style.top = (s * PPM) + 'px'; g.style.height = ((e - s) * PPM - 2) + 'px';
   g.textContent = hm(s) + '–' + hm(e) + ' · ' + dur(e - s);
@@ -1089,6 +1096,7 @@ function showGhost(){
 function activate(){
   if (!drag || drag.active) return;
   drag.active = true;
+  if (drag.move) { drag.mv = [drag.move.s, drag.move.e]; const be = drag.track.querySelector('.blk[data-id="' + drag.move.id + '"]'); if (be) be.classList.add('moving'); }
   document.body.classList.add('dragging');
   try { navigator.vibrate && navigator.vibrate(8); } catch(e){}
   showGhost();
@@ -1099,8 +1107,13 @@ function autoscroll(){
   const topEdge = ($('.top').getBoundingClientRect().bottom) + 36;
   if (drag.y < topEdge) window.scrollBy(0, -12);
   else if (drag.y > window.innerHeight - 130) window.scrollBy(0, 12);
-  const c = cellAt(drag.y, drag.track);
-  if (c !== drag.cur) { drag.cur = c; showGhost(); }
+  if (drag.move) {
+    const m = moveRange(drag);
+    if (m[0] !== drag.mv[0]) { drag.mv = m; drag.moved = true; showGhost(); }
+  } else {
+    const c = cellAt(drag.y, drag.track);
+    if (c !== drag.cur) { drag.cur = c; showGhost(); }
+  }
   requestAnimationFrame(autoscroll);
 }
 function endDrag(){
@@ -1108,6 +1121,7 @@ function endDrag(){
   clearTimeout(drag.timer);
   document.body.classList.remove('dragging');
   const g = drag.track.querySelector('.ghost'); if (g && !edit) g.remove();
+  document.querySelectorAll('.blk.moving').forEach(e => e.classList.remove('moving'));
   drag = null;
   if (pendingRender) renderAll();
 }
@@ -1117,7 +1131,8 @@ tl.addEventListener('pointerdown', ev => {
   const blk = ev.target.closest('.blk');
   const gp = ev.target.closest('.gap');
   const d = {layer: track.dataset.layer, track, pid: ev.pointerId, x0: ev.clientX, y0: ev.clientY, y: ev.clientY,
-    touch: ev.pointerType !== 'mouse', active: false, moved: false, tapId: blk ? blk.dataset.id : null, gap: gp ? [Number(gp.dataset.s), Number(gp.dataset.e)] : null, timer: null};
+    touch: ev.pointerType !== 'mouse', active: false, moved: false, tapId: blk ? blk.dataset.id : null, gap: gp ? [Number(gp.dataset.s), Number(gp.dataset.e)] : null, timer: null, move: null, y0p: ev.clientY + window.scrollY};
+  if (blk && track.dataset.layer === 'goal') { const mb = getDay(date).goal.find(x => x.id === blk.dataset.id); if (mb) d.move = {id: mb.id, s: mb.s, e: mb.e}; }
   d.a = d.cur = cellAt(ev.clientY, track);
   drag = d;
   if (d.touch) d.timer = setTimeout(() => { if (drag === d) activate(); }, 300);
@@ -1130,6 +1145,11 @@ window.addEventListener('pointermove', ev => {
     if (drag.touch) { if (dy > 8 || dx > 8) { clearTimeout(drag.timer); drag = null; } return; }
     if (dy > 5) activate(); else return;
   }
+  if (drag.move) {
+    const m = moveRange(drag);
+    if (m[0] !== drag.mv[0]) { drag.mv = m; drag.moved = true; showGhost(); }
+    return;
+  }
   const c = dy < 6 ? drag.a : cellAt(ev.clientY, drag.track);
   if (c !== drag.cur) { drag.cur = c; drag.moved = true; showGhost(); }
 });
@@ -1138,7 +1158,17 @@ window.addEventListener('pointerup', ev => {
   const d = drag;
   const [s, e] = range(d);
   const wasActive = d.active;
+  const mv = d.mv;
   endDrag();
+  if (wasActive && d.move && d.moved && mv) {
+    const o = getDay(date), b = o.goal.find(x => x.id === d.move.id);
+    if (b && mv[0] !== b.s) {
+      const nb = {id: b.id, s: mv[0], e: mv[1], c: b.c, t: b.t};
+      o.goal = paint(o.goal.filter(x => x.id !== b.id), mv[0], mv[1], nb);
+      commit();
+    }
+    return;
+  }
   if (!wasActive || (!d.moved && d.tapId)) {
     if (d.tapId) {
       const b = getDay(date)[d.layer].find(x => x.id === d.tapId);
