@@ -171,6 +171,11 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .catname{flex:1;min-width:0;height:36px;border-radius:10px;border:0;background:var(--surface);color:var(--fg);padding:0 12px;font:inherit;font-size:15px;font-weight:500}
 .mini{min-width:34px;height:36px;padding:0 6px;border-radius:10px;border:0;background:var(--surface);flex:none;font-size:14px}
 .mini[disabled]{opacity:.35;cursor:default}
+.grip{touch-action:none;cursor:grab;display:flex;align-items:center;justify-content:center;color:var(--muted);min-width:40px;-webkit-user-select:none;user-select:none}
+.grip svg{width:20px;height:20px}
+.catrow{position:relative}
+.catrow.shift{transition:transform .16s ease}
+.catrow.dragging{z-index:6;box-shadow:0 8px 24px rgb(10 12 20/.28);transition:none;background:var(--surface)}
 .mini.confirm{color:var(--danger);font-size:12px;font-weight:700}
 .palette{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:2px 4px 6px}
 .pal{width:30px;height:30px;border-radius:50%;border:0;background:var(--cat);box-shadow:inset 0 0 0 2px var(--tint)}
@@ -366,7 +371,7 @@ textarea{width:100%;border:0;border-radius:12px;background:var(--tint);color:var
     <div class="setsec"><h3>글꼴</h3><div class="fonts" id="fontlist"></div></div>
     <div class="setsec"><h3>하루 계획 · 고정 루틴</h3><p class="setnote">정한 요일과 기간마다 계획에 자동으로 채워져요. 그날 이미 칠해 둔 계획과 겹치는 시간은 건너뛰어요.</p><div id="routlist"></div><div class="setacts"><button class="btn primary" id="routadd" type="button">+ 루틴 추가</button></div></div>
     <h3 class="sech">분류</h3>
-    <p class="setnote">이름과 색, 순서를 마음대로 바꿀 수 있어요. 바꾼 내용은 바로 저장돼요. 색 동그라미를 누르면 색을 고를 수 있어요.</p>
+    <p class="setnote">이름과 색, 순서를 마음대로 바꿀 수 있어요. 순서는 ⋮⋮ 모양을 잡고 끌어서 옮겨요. 색 동그라미를 누르면 색을 고를 수 있어요. 바꾼 내용은 바로 저장돼요.</p>
     <div id="catlist" style="display:flex;flex-direction:column;gap:8px"></div>
     <div class="setacts"><button class="btn" id="catadd" type="button">+ 분류 추가</button><button class="btn" id="catreset" type="button">기본 분류로 되돌리기</button></div>
     <h3 class="sech">계정</h3>
@@ -1308,8 +1313,7 @@ function drawCatList(){
     let h = '<div class="catrow" data-id="' + esc(c.id) + '" style="--cat:' + c.col + '"><div class="catmain">' +
       '<button type="button" class="swatch" data-a="color" aria-label="색 변경" aria-expanded="' + (openColor === c.id) + '"></button>' +
       '<input class="catname" value="' + esc(c.n) + '" maxlength="12" aria-label="분류 이름" autocomplete="off">' +
-      '<button type="button" class="mini" data-a="up" aria-label="위로"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
-      '<button type="button" class="mini" data-a="down" aria-label="아래로"' + (i === CATS.length - 1 ? ' disabled' : '') + '>↓</button>' +
+      '<button type="button" class="mini grip" data-a="grip" aria-label="순서 바꾸기 (끌어서 이동, 위아래 화살표 키)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>' +
       '<button type="button" class="mini' + (delConfirm === c.id ? ' confirm' : '') + '" data-a="del" aria-label="삭제"' + (CATS.length < 2 ? ' disabled' : '') + '>' + (delConfirm === c.id ? '삭제?' : '✕') + '</button></div>';
     if (openColor === c.id) {
       h += '<div class="palette">' + PALETTE.map(p => '<button type="button" class="pal" data-a="pal" data-col="' + p + '" style="--cat:' + p + '" aria-label="' + p + '" aria-pressed="' + (p.toLowerCase() === c.col.toLowerCase()) + '"></button>').join('') +
@@ -1328,13 +1332,78 @@ $('#catlist').addEventListener('click', ev => {
   if (a !== 'del') delConfirm = null;
   if (a === 'color') openColor = openColor === id ? null : id;
   else if (a === 'pal') { CATS[i].col = b.dataset.col; saveCats(); }
-  else if (a === 'up' && i > 0) { [CATS[i - 1], CATS[i]] = [CATS[i], CATS[i - 1]]; saveCats(); }
-  else if (a === 'down' && i < CATS.length - 1) { [CATS[i + 1], CATS[i]] = [CATS[i], CATS[i + 1]]; saveCats(); }
   else if (a === 'del') {
     if (delConfirm === id) { CATS.splice(i, 1); delConfirm = null; if (openColor === id) openColor = null; saveCats(); }
     else delConfirm = id;
   }
   drawCatList();
+});
+/* drag to reorder */
+let cdrag = null;
+$('#catlist').addEventListener('pointerdown', ev => {
+  const g = ev.target.closest('.grip'); if (!g || cdrag) return;
+  if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+  ev.preventDefault();
+  const list = $('#catlist'), rows = [...list.querySelectorAll('.catrow')], row = g.closest('.catrow');
+  const start = rows.indexOf(row);
+  const rects = rows.map(r => r.getBoundingClientRect());
+  const gap = rows.length > 1 ? Math.max(0, rects[1].top - rects[0].bottom) : 8;
+  const sc = $('#setroot');
+  cdrag = {g, pid: ev.pointerId, rows, row, start, target: start, rects, gap, y0: ev.clientY, y: ev.clientY, sc, s0: sc.scrollTop, raf: 0};
+  try { g.setPointerCapture(ev.pointerId); } catch(e){}
+  row.classList.add('dragging');
+  rows.forEach(r => { if (r !== row) r.classList.add('shift'); });
+  try { navigator.vibrate && navigator.vibrate(8); } catch(e){}
+  const tick = () => {
+    if (!cdrag) return;
+    const d = cdrag, vh = window.innerHeight;
+    if (d.y < 90) d.sc.scrollTop -= 10; else if (d.y > vh - 90) d.sc.scrollTop += 10;
+    layoutCatDrag();
+    d.raf = requestAnimationFrame(tick);
+  };
+  cdrag.raf = requestAnimationFrame(tick);
+});
+function layoutCatDrag(){
+  const d = cdrag; if (!d) return;
+  const dy = (d.y - d.y0) + (d.sc.scrollTop - d.s0);
+  d.row.style.transform = 'translateY(' + dy + 'px)';
+  const r0 = d.rects[d.start], center = r0.top + r0.height / 2 + dy;
+  let t = d.start;
+  d.rects.forEach((r, i) => { if (i === d.start) return; const c = r.top + r.height / 2; if (i < d.start && center < c) t = Math.min(t, i); if (i > d.start && center > c) t = Math.max(t, i); });
+  d.target = t;
+  const h = r0.height + d.gap;
+  d.rows.forEach((r, i) => {
+    if (i === d.start) return;
+    let sh = 0;
+    if (t > d.start && i > d.start && i <= t) sh = -h;
+    else if (t < d.start && i >= t && i < d.start) sh = h;
+    r.style.transform = sh ? 'translateY(' + sh + 'px)' : '';
+  });
+}
+$('#catlist').addEventListener('pointermove', ev => {
+  if (!cdrag || ev.pointerId !== cdrag.pid) return;
+  cdrag.y = ev.clientY; layoutCatDrag();
+});
+function endCatDrag(ev, cancel){
+  const d = cdrag; if (!d || ev.pointerId !== d.pid) return;
+  cancelAnimationFrame(d.raf); cdrag = null;
+  try { d.g.releasePointerCapture(d.pid); } catch(e){}
+  if (!cancel && d.target !== d.start) {
+    const [c] = CATS.splice(d.start, 1); CATS.splice(d.target, 0, c);
+    saveCats();
+  }
+  drawCatList();
+}
+$('#catlist').addEventListener('pointerup', ev => endCatDrag(ev, false));
+$('#catlist').addEventListener('pointercancel', ev => endCatDrag(ev, true));
+$('#catlist').addEventListener('keydown', ev => {
+  const g = ev.target.closest && ev.target.closest('.grip'); if (!g) return;
+  const id = g.closest('.catrow').dataset.id, i = CATS.findIndex(c => c.id === id);
+  const j = ev.key === 'ArrowUp' ? i - 1 : ev.key === 'ArrowDown' ? i + 1 : -1;
+  if (j < 0 || j >= CATS.length) return;
+  ev.preventDefault();
+  [CATS[i], CATS[j]] = [CATS[j], CATS[i]]; saveCats(); drawCatList();
+  const ng = document.querySelector('.catrow[data-id="' + id + '"] .grip'); if (ng) ng.focus();
 });
 $('#catlist').addEventListener('input', ev => {
   const row = ev.target.closest('.catrow'); if (!row) return;
